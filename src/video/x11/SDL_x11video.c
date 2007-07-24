@@ -72,6 +72,7 @@ static char rcsid =
 #include "SDL_x11image_c.h"
 #include "SDL_x11yuv_c.h"
 #include "SDL_x11gl_c.h"
+#include "SDL_x11gles_c.h"
 #include "SDL_x11gamma_c.h"
 #include "blank_cursor.h"
 
@@ -107,6 +108,11 @@ static void X11_DeleteDevice(SDL_VideoDevice *device)
 		if ( device->gl_data ) {
 			free(device->gl_data);
 		}
+#ifdef HAVE_OPENGL_ES
+		if ( device->gles_data ) {
+			free(device->gles_data);
+		}
+#endif
 		free(device);
 	}
 }
@@ -123,15 +129,27 @@ static SDL_VideoDevice *X11_CreateDevice(int devindex)
 				malloc((sizeof *device->hidden));
 		device->gl_data = (struct SDL_PrivateGLData *)
 				malloc((sizeof *device->gl_data));
+#ifdef HAVE_OPENGL_ES
+		device->gles_data = (struct SDL_PrivateGLESData *)
+				malloc((sizeof *device->gles_data));
+#endif
 	}
 	if ( (device == NULL) || (device->hidden == NULL) ||
-	                         (device->gl_data == NULL) ) {
+	                         (device->gl_data == NULL) ||
+#ifdef HAVE_OPENGL_ES
+	                         (device->gles_data == NULL) ) {
+#else
+	                         ) {
+#endif
 		SDL_OutOfMemory();
 		X11_DeleteDevice(device);
 		return(0);
 	}
 	memset(device->hidden, 0, (sizeof *device->hidden));
 	memset(device->gl_data, 0, (sizeof *device->gl_data));
+#ifdef HAVE_OPENGL_ES
+	memset(device->gles_data, 0, (sizeof *device->gles_data));
+#endif
 
 	/* Set the driver flags */
 	device->handles_any_size = 1;
@@ -167,6 +185,13 @@ static SDL_VideoDevice *X11_CreateDevice(int devindex)
 	device->GL_GetAttribute = X11_GL_GetAttribute;
 	device->GL_MakeCurrent = X11_GL_MakeCurrent;
 	device->GL_SwapBuffers = X11_GL_SwapBuffers;
+#endif
+#ifdef HAVE_OPENGL_ES
+	device->GLES_LoadLibrary = X11_GLES_LoadLibrary;
+	device->GLES_GetProcAddress = X11_GLES_GetProcAddress;
+	device->GLES_GetAttribute = X11_GLES_GetAttribute;
+	device->GLES_MakeCurrent = X11_GLES_MakeCurrent;
+	device->GLES_SwapBuffers = X11_GLES_SwapBuffers;
 #endif
 	device->SetCaption = X11_SetCaption;
 	device->SetIcon = X11_SetIcon;
@@ -485,9 +510,11 @@ static void X11_DestroyWindow(_THIS, SDL_Surface *screen)
 {
 	/* Clean up OpenGL */
 	if ( screen ) {
-		screen->flags &= ~(SDL_OPENGL|SDL_OPENGLBLIT);
+		screen->flags &= ~(SDL_OPENGL|SDL_OPENGLBLIT|SDL_OPENGLES|SDL_OPENGLESBLIT);
 	}
+	/* FIXME only shutdown the used drivers */
 	X11_GL_Shutdown(this);
+	X11_GLES_Shutdown(this);
 
 	if ( ! SDL_windowid ) {
 		/* Hide the managed window */
@@ -690,11 +717,17 @@ static int X11_CreateWindow(_THIS, SDL_Surface *screen,
 	}
 
 	/* find out which visual we are going to use */
-	if ( flags & SDL_OPENGL ) {
+	if ( flags & (SDL_OPENGL | SDL_OPENGLES) ) {
 		XVisualInfo *vi;
 
-		vi = X11_GL_GetVisual(this);
+		if ( flags & SDL_OPENGL ) {
+			vi = X11_GL_GetVisual(this);
+		} else {
+			vi = X11_GLES_GetVisual(this);
+		}
+		
 		if( !vi ) {
+			SDL_SetError("No matching visual for requested GL config");
 			return -1;
 		}
 		vis = vi->visual;
@@ -801,6 +834,10 @@ static int X11_CreateWindow(_THIS, SDL_Surface *screen,
 			if ( X11_GL_CreateWindow(this, w, h) < 0 ) {
 				return(-1);
 			}
+		} else if ( flags & SDL_OPENGLES ) {
+			if ( X11_GLES_CreateWindow(this, w, h) < 0 ) {
+				return(-1);
+			}
 		} else {
 			XSetWindowAttributes swa;
 
@@ -828,6 +865,12 @@ static int X11_CreateWindow(_THIS, SDL_Surface *screen,
 		} else {
 			screen->flags |= SDL_OPENGL;
 		}
+	} else if ( flags & SDL_OPENGLES ) {
+		if ( X11_GLES_CreateContext(this) < 0 ) {
+			return(-1);
+		} else {
+			screen->flags |= SDL_OPENGLES;
+		}
 	} else {
 		XGCValues gcv;
 
@@ -841,7 +884,7 @@ static int X11_CreateWindow(_THIS, SDL_Surface *screen,
 	}
 
 	/* Set our colormaps when not setting a GL mode */
-	if ( ! (flags & SDL_OPENGL) ) {
+	if ( ! (flags & (SDL_OPENGL | SDL_OPENGLES) ) ) {
 		XSetWindowColormap(SDL_Display, SDL_Window, SDL_XColorMap);
 		if( !SDL_windowid ) {
 		    XSetWindowColormap(SDL_Display, FSwindow, SDL_XColorMap);
@@ -957,7 +1000,7 @@ SDL_Surface *X11_SetVideoMode(_THIS, SDL_Surface *current,
 
 	/* Set up the X11 window */
 	saved_flags = current->flags;
-	if ( (SDL_Window) && ((saved_flags&SDL_OPENGL) == (flags&SDL_OPENGL))
+	if ( (SDL_Window) && ((saved_flags&(SDL_OPENGL|SDL_OPENGLES)) == (flags&(SDL_OPENGL|SDL_OPENGLES)))
 	      && (bpp == current->format->BitsPerPixel)
           && ((saved_flags&SDL_NOFRAME) == (flags&SDL_NOFRAME)) ) {
 		if (X11_ResizeWindow(this, current, width, height, flags) < 0) {
@@ -973,7 +1016,7 @@ SDL_Surface *X11_SetVideoMode(_THIS, SDL_Surface *current,
 
 	/* Set up the new mode framebuffer */
 	if ( ((current->w != width) || (current->h != height)) ||
-             ((saved_flags&SDL_OPENGL) != (flags&SDL_OPENGL)) ) {
+             ((saved_flags&(SDL_OPENGL|SDL_OPENGLES)) != (flags&(SDL_OPENGL|SDL_OPENGLES))) ) {
 		current->w = width;
 		current->h = height;
 		current->pitch = SDL_CalculatePitch(current);
@@ -1295,6 +1338,7 @@ void X11_VideoQuit(_THIS)
 
 		/* Unload GL library after X11 shuts down */
 		X11_GL_UnloadLibrary(this);
+		X11_GLES_UnloadLibrary(this);
 	}
 	if ( this->screen && (this->screen->flags & SDL_HWSURFACE) ) {
 		/* Direct screen access, no memory buffer */

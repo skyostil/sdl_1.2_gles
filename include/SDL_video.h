@@ -127,25 +127,27 @@ typedef struct SDL_Surface {
 
 /* These are the currently supported flags for the SDL_surface */
 /* Available for SDL_CreateRGBSurface() or SDL_SetVideoMode() */
-#define SDL_SWSURFACE	0x00000000	/* Surface is in system memory */
-#define SDL_HWSURFACE	0x00000001	/* Surface is in video memory */
-#define SDL_ASYNCBLIT	0x00000004	/* Use asynchronous blits if possible */
+#define SDL_SWSURFACE	   0x00000000	/* Surface is in system memory */
+#define SDL_HWSURFACE	   0x00000001	/* Surface is in video memory */
+#define SDL_ASYNCBLIT	   0x00000004	/* Use asynchronous blits if possible */
 /* Available for SDL_SetVideoMode() */
-#define SDL_ANYFORMAT	0x10000000	/* Allow any video depth/pixel-format */
-#define SDL_HWPALETTE	0x20000000	/* Surface has exclusive palette */
-#define SDL_DOUBLEBUF	0x40000000	/* Set up double-buffered video mode */
-#define SDL_FULLSCREEN	0x80000000	/* Surface is a full screen display */
-#define SDL_OPENGL      0x00000002      /* Create an OpenGL rendering context */
-#define SDL_OPENGLBLIT	0x0000000A	/* Create an OpenGL rendering context and use it for blitting */
-#define SDL_RESIZABLE	0x00000010	/* This video mode may be resized */
-#define SDL_NOFRAME	0x00000020	/* No window caption or edge frame */
+#define SDL_ANYFORMAT	   0x10000000	/* Allow any video depth/pixel-format */
+#define SDL_HWPALETTE	   0x20000000	/* Surface has exclusive palette */
+#define SDL_DOUBLEBUF	   0x40000000	/* Set up double-buffered video mode */
+#define SDL_FULLSCREEN	   0x80000000	/* Surface is a full screen display */
+#define SDL_OPENGL         0x00000002   /* Create an OpenGL rendering context */
+#define SDL_OPENGLBLIT	   0x0000000A	/* Create an OpenGL rendering context and use it for blitting */
+#define SDL_OPENGLES       0x00000040   /* Create an OpenGL ES rendering context */
+#define SDL_OPENGLESBLIT   0x00000048   /* Create an OpenGL ES rendering context and use it for blitting */
+#define SDL_RESIZABLE	   0x00000010	/* This video mode may be resized */
+#define SDL_NOFRAME	   0x00000020	/* No window caption or edge frame */
 /* Used internally (read-only) */
-#define SDL_HWACCEL	0x00000100	/* Blit uses hardware acceleration */
-#define SDL_SRCCOLORKEY	0x00001000	/* Blit uses a source color key */
-#define SDL_RLEACCELOK	0x00002000	/* Private flag */
-#define SDL_RLEACCEL	0x00004000	/* Surface is RLE encoded */
-#define SDL_SRCALPHA	0x00010000	/* Blit uses source alpha blending */
-#define SDL_PREALLOC	0x01000000	/* Surface uses preallocated memory */
+#define SDL_HWACCEL	   0x00000100	/* Blit uses hardware acceleration */
+#define SDL_SRCCOLORKEY	   0x00001000	/* Blit uses a source color key */
+#define SDL_RLEACCELOK	   0x00002000	/* Private flag */
+#define SDL_RLEACCEL	   0x00004000	/* Surface is RLE encoded */
+#define SDL_SRCALPHA	   0x00010000	/* Blit uses source alpha blending */
+#define SDL_PREALLOC	   0x01000000	/* Surface uses preallocated memory */
 
 /* Evaluates to true if the surface needs to be locked before access */
 #define SDL_MUSTLOCK(surface)	\
@@ -792,9 +794,26 @@ extern DECLSPEC void SDLCALL SDL_FreeYUVOverlay(SDL_Overlay *overlay);
 extern DECLSPEC int SDLCALL SDL_GL_LoadLibrary(const char *path);
 
 /*
+ * Dynamically load an OpenGL ES driver, if SDL is built with dynamic GL.
+ *
+ * SDL links normally with the OpenGL ES library on your system by default,
+ * but you can compile it to dynamically load the GL driver at runtime.
+ * If you do this, you need to retrieve all of the OpenGL ES functions used in
+ * your program from the dynamic library using SDL_GLES_GetProcAddress().
+ *
+ * This is disabled in default builds of SDL.
+ */
+extern DECLSPEC int SDLCALL SDL_GLES_LoadLibrary(const char *path);
+
+/*
  * Get the address of a GL function (for extension functions)
  */
 extern DECLSPEC void * SDLCALL SDL_GL_GetProcAddress(const char* proc);
+
+/*
+ * Get the address of an OpenGL ES function (for extension functions)
+ */
+extern DECLSPEC void * SDLCALL SDL_GLES_GetProcAddress(const char* proc);
 
 /*
  * Set an attribute of the OpenGL subsystem before intialization.

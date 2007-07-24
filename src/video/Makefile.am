@@ -28,6 +28,7 @@ COMMON_SRCS =			\
 	SDL_cursor_c.h		\
 	SDL_gamma.c		\
 	SDL_glfuncs.h		\
+	SDL_glesfuncs.h		\
 	SDL_leaks.h		\
 	SDL_memops.h		\
 	SDL_pixels.c		\

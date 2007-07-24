@@ -19,6 +19,7 @@ dnl Check for compiler environment
 AC_C_CONST
 
 dnl Figure out which math library to use
+SYS_GLES_LIBS="-lvincent" # FIXME
 case "$target" in
     *-*-cygwin* | *-*-mingw32*)
         MATHLIB=""
@@ -90,6 +91,24 @@ else
     GL_LIBS=""
 fi
 AC_SUBST(GL_LIBS)
+
+dnl Check for OpenGL ES
+AC_MSG_CHECKING(for OpenGL ES support)
+have_opengl_es=no
+AC_TRY_COMPILE([
+ #include <GLES/gl.h>
+],[
+],[
+have_opengl_es=yes
+])
+AC_MSG_RESULT($have_opengl_es)
+if test x$have_opengl_es = xyes; then
+    CFLAGS="$CFLAGS -DHAVE_OPENGL_ES"
+    GLES_LIBS="$SYS_GLES_LIBS"
+else
+    GLES_LIBS=""
+fi
+AC_SUBST(GLES_LIBS)
 
 # Finally create all the generated files
 AC_OUTPUT([Makefile])

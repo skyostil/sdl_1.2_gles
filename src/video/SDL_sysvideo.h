@@ -54,6 +54,10 @@ static char rcsid =
 #endif /* MACOSX */
 #endif /* HAVE_OPENGL */
 
+#ifdef HAVE_OPENGL_ES
+#include <GLES/gl.h>
+#endif /* HAVE_OPENGL_ES */
+
 /* The SDL video driver */
 typedef struct SDL_VideoDevice SDL_VideoDevice;
 
@@ -179,7 +183,7 @@ struct SDL_VideoDevice {
 	int (*GetGammaRamp)(_THIS, Uint16 *ramp);
 
 	/* * * */
-	/* OpenGL support */
+	/* OpenGL and OpenGL ES support */
 
 	/* Sets the dll to use for OpenGL and loads it */
 	int (*GL_LoadLibrary)(_THIS, const char *path);
@@ -196,15 +200,34 @@ struct SDL_VideoDevice {
 	/* Swap the current buffers in double buffer mode. */
 	void (*GL_SwapBuffers)(_THIS);
 
-  	/* OpenGL functions for SDL_OPENGLBLIT */
-#ifdef HAVE_OPENGL
-#ifndef WIN32
-#define WINAPI
-#endif
-#define SDL_PROC(ret,func,params) ret (WINAPI *func) params;
-#include "SDL_glfuncs.h"
-#undef SDL_PROC
+	/* Sets the dll to use for OpenGL ES and loads it */
+	int (*GLES_LoadLibrary)(_THIS, const char *path);
 
+	/* Retrieves the address of a function in the gl library */
+	void* (*GLES_GetProcAddress)(_THIS, const char *proc);
+
+        /* Get attribute information from the windowing system. */
+        int (*GLES_GetAttribute)(_THIS, SDL_GLattr attrib, int* value);
+
+        /* Make the context associated with this driver current */
+        int (*GLES_MakeCurrent)(_THIS);
+
+	/* Swap the current buffers in double buffer mode. */
+	void (*GLES_SwapBuffers)(_THIS);
+
+  	/* OpenGL functions for SDL_OPENGLBLIT */
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGL_ES)
+#  ifndef WIN32
+#    define WINAPI
+#  endif
+#  define SDL_PROC(ret,func,params) ret (WINAPI *func) params;
+#  include "SDL_glfuncs.h"
+#  undef SDL_PROC
+#  ifdef HAVE_OPENGL_ES
+#    define SDL_PROC(ret,func,params) ret (WINAPI *(GLES_##func)) params;
+#    include "SDL_glesfuncs.h"
+#    undef SDL_PROC
+#  endif
 	/* Texture id */
 	GLuint texture;
 #endif
@@ -315,6 +338,7 @@ struct SDL_VideoDevice {
 	/* Data private to this driver */
 	struct SDL_PrivateVideoData *hidden;
 	struct SDL_PrivateGLData *gl_data;
+	struct SDL_PrivateGLESData *gles_data;
 
 	/* * * */
 	/* The function used to dispose of this structure */

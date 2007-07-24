@@ -14,6 +14,8 @@ X11_SRCS = 			\
 	SDL_x11gamma_c.h	\
 	SDL_x11gl.c		\
 	SDL_x11gl_c.h		\
+	SDL_x11gles.c		\
+	SDL_x11gles_c.h		\
 	SDL_x11image.c		\
 	SDL_x11image_c.h	\
 	SDL_x11modes.c		\

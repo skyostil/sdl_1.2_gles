@@ -1065,6 +1065,11 @@ AC_ARG_ENABLE(video-opengl,
 [  --enable-video-opengl   include OpenGL context creation [default=yes]],
               , enable_video_opengl=yes)
 
+dnl Check to see if OpenGL ES support is desired
+AC_ARG_ENABLE(video-opengl-es,
+[  --enable-video-opengl-es   include OpenGL ES context creation [default=yes]],
+              , enable_video_opengl_es=yes)
+
 dnl Find OpenGL
 CheckOpenGL()
 {
@@ -1082,6 +1087,30 @@ CheckOpenGL()
         AC_MSG_RESULT($video_opengl)
         if test x$video_opengl = xyes; then
             CFLAGS="$CFLAGS -DHAVE_OPENGL"
+            if test x$use_dlopen != xyes; then
+                AC_CHECK_LIB(dl, dlopen, SYSTEM_LIBS="$SYSTEM_LIBS -ldl")
+            fi
+        fi
+    fi
+}
+
+dnl Find OpenGL ES
+CheckOpenGLES()
+{
+    if test x$enable_video = xyes -a x$enable_video_opengl_es = xyes; then
+        AC_MSG_CHECKING(for OpenGL ES (EGL) support)
+        video_opengl_es=no
+        AC_TRY_COMPILE([
+         #include <GLES/gl.h>
+         #include <GLES/egl.h>
+         #include <dlfcn.h> /* For loading extensions */
+        ],[
+        ],[
+        video_opengl_es=yes
+        ])
+        AC_MSG_RESULT($video_opengl_es)
+        if test x$video_opengl_es = xyes; then
+            CFLAGS="$CFLAGS -DHAVE_OPENGL_ES"
             if test x$use_dlopen != xyes; then
                 AC_CHECK_LIB(dl, dlopen, SYSTEM_LIBS="$SYSTEM_LIBS -ldl")
             fi
@@ -1885,6 +1914,7 @@ case "$target" in
         CheckQtopia
         CheckPicoGUI
         CheckOpenGL
+        CheckOpenGLES
         CheckInputEvents
         CheckPTHREAD
         CheckSIGACTION
