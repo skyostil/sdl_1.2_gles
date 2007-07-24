@@ -1,0 +1,20 @@
+Source: libsdl1.2
+Priority: optional
+Maintainer: Kuisma Salonen <kuisma.salonen@nokia.com>
+Build-Depends: debhelper (>= 4.0.0), xlibs-dev, automake1.8, libasound2-dev
+Standards-Version: 3.6.0
+
+Package: libsdl1.2-dev
+Section: devel
+Architecture: any
+Depends: libsdl1.2 (= ${Source-Version}), xlibs-dev
+Description: Development files for libsdl
+ Development headers and static libraries for libsdl.
+
+Package: libsdl1.2
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Simple "Direct"Media Layer
+ Altrough it claims to be "direct", it is not that
+ direct as you can see after using it for a while...

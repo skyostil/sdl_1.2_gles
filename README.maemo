@@ -1,0 +1,30 @@
+SDL fitted for maemo.
+
+  Questions etc about this particular package of SDL 1.2 packaged especially
+  for maemo can be sent to:
+
+    kuisma.salonen@nokia.com
+
+
+
+INFO
+
+  The package is deb package of mainstream SDL version 1.2.8. It contains some
+local changes (fixes, etc). It is guaranteed personally by the package
+maintainer to attempt to provide SDL 1.2 API running on maemo.
+
+
+BUILD CONFIGURATION
+
+  - Audio: ALSA (others disabled)
+  - Video: X11
+
+
+MODIFICATIONS VERSUS UPSTREAM 1.2.8
+
+  - The SDL_SetVideoMode() fails if trying to create primary surface with BPP
+   over 16 (unless SDL_ANYFORMAT flag is on as it falls back to 16 bit)
+  - Fullscreen primary surfaces use window manager fullscreen attribute
+   instead of OverrideRedirect. Also removed grabbing. Together they caused
+   problems with matchbox window manager and windows popping over the
+   fullscreen window of SDL.

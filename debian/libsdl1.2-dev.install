@@ -1,0 +1,6 @@
+usr/bin/sdl-config
+usr/include/SDL/*.h
+usr/lib/*.so
+usr/lib/*.a
+usr/lib/*.la
+usr/share/aclocal/*.m4
