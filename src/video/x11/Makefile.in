@@ -51,8 +51,8 @@ CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libvideo_x11_la_LIBADD =
 am__objects_1 = SDL_x11dga.lo SDL_x11events.lo SDL_x11gamma.lo \
-	SDL_x11gl.lo SDL_x11image.lo SDL_x11modes.lo SDL_x11mouse.lo \
-	SDL_x11video.lo SDL_x11wm.lo SDL_x11yuv.lo
+	SDL_x11gl.lo SDL_x11gles.lo SDL_x11image.lo SDL_x11modes.lo \
+	SDL_x11mouse.lo SDL_x11video.lo SDL_x11wm.lo SDL_x11yuv.lo
 am_libvideo_x11_la_OBJECTS = $(am__objects_1)
 libvideo_x11_la_OBJECTS = $(am_libvideo_x11_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
@@ -62,6 +62,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/SDL_x11events.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/SDL_x11gamma.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/SDL_x11gl.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SDL_x11gles.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/SDL_x11image.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/SDL_x11modes.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/SDL_x11mouse.Plo \
@@ -295,6 +296,8 @@ X11_SRCS = \
 	SDL_x11gamma_c.h	\
 	SDL_x11gl.c		\
 	SDL_x11gl_c.h		\
+	SDL_x11gles.c		\
+	SDL_x11gles_c.h		\
 	SDL_x11image.c		\
 	SDL_x11image_c.h	\
 	SDL_x11modes.c		\
@@ -321,9 +324,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/video/x11/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/video/x11/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src/video/x11/Makefile
+	  $(AUTOMAKE) --gnu  src/video/x11/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -363,6 +366,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SDL_x11events.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SDL_x11gamma.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SDL_x11gl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SDL_x11gles.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SDL_x11image.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SDL_x11modes.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SDL_x11mouse.Plo@am__quote@
