@@ -722,7 +722,6 @@ static int X11_CreateWindow(_THIS, SDL_Surface *screen,
 	{
 		flags |= SDL_OPENGLES;
 	}
-	#error joo	
 #endif
 
 	/* find out which visual we are going to use */

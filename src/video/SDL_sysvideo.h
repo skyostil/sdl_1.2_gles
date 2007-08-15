@@ -225,14 +225,19 @@ struct SDL_VideoDevice {
 #  undef SDL_PROC
 #endif /* HAVE_OPENGL */
 #ifdef HAVE_OPENGL_ES
+#  ifndef WIN32
+#    define WINAPI
+#  endif
 #  define SDL_PROC(ret,func,params) ret (WINAPI *(GLES_##func)) params;
 #  include "SDL_glesfuncs.h"
 #  undef SDL_PROC
 #endif /* HAVE_OPENGL_ES */
+
+#if defined(HAVE_OPENGL) || defined(HAVE_OPENGL_ES)
 	/* Texture id */
 	GLuint texture;
-#endif
 	int is_32bit;
+#endif
  
 	/* * * */
 	/* Window manager functions */

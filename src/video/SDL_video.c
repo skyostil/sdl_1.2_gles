@@ -1716,6 +1716,7 @@ void SDL_GL_Lock()
 		else
 #endif /* HAVE_OPENGL_ES */
 		{
+#if defined(HAVE_OPENGL)
 			this->glPushAttrib( GL_ALL_ATTRIB_BITS );	/* TODO: narrow range of what is saved */
 #ifdef GL_CLIENT_PIXEL_STORE_BIT
 			this->glPushClientAttrib( GL_CLIENT_PIXEL_STORE_BIT );
@@ -1751,6 +1752,7 @@ void SDL_GL_Lock()
 			this->glMatrixMode(GL_MODELVIEW);
 			this->glPushMatrix();
 			this->glLoadIdentity();
+#endif /* HAVE_OPENGL */
 		}
 	}
 #endif /* HAVE_OPENGL || HAVE_OPENGL_ES */
@@ -1780,12 +1782,14 @@ void SDL_GL_Unlock()
 		else
 #endif /* HAVE_OPENGL_ES */
 		{
+#if defined(HAVE_OPENGL)
 			this->glPopMatrix();
 			this->glMatrixMode(GL_PROJECTION);
 			this->glPopMatrix();
 
 			this->glPopClientAttrib();
 			this->glPopAttrib();
+#endif /* HAVE_OPENGL */
 		}
 	}
 #endif /* HAVE_OPENGL || HAVE_OPENGL_ES */
