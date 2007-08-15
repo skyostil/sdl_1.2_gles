@@ -716,6 +716,15 @@ static int X11_CreateWindow(_THIS, SDL_Surface *screen,
 		SDL_Window = 0;
 	}
 
+#if defined(HAVE_OPENGL_ES) && !defined(HAVE_OPENGL)
+	/* If an OpenGL video mode was requested, but we only have OpenGL ES, use ES */
+	if (flags & SDL_OPENGL)
+	{
+		flags |= SDL_OPENGLES;
+	}
+	#error joo	
+#endif
+
 	/* find out which visual we are going to use */
 	if ( flags & (SDL_OPENGL | SDL_OPENGLES) ) {
 		XVisualInfo *vi;

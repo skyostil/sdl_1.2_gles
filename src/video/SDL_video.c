@@ -748,9 +748,10 @@ SDL_Surface * SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags)
 	SDL_WM_GrabInput(saved_grab);
 	SDL_GetRelativeMouseState(NULL, NULL); /* Clear first large delta */
 
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENGL_ES)
 	/* Load GL symbols (before MakeCurrent, where we need glGetString). */
 	if ( is_opengl ) {
+
+#if defined(HAVE_OPENGL)
 
 #if (defined(macintosh) && !defined(__MWERKS__))
 #define __SDL_NOGETPROCADDR__
@@ -775,8 +776,9 @@ SDL_Surface * SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags)
 
 #include "SDL_glfuncs.h"
 #undef SDL_PROC
+#endif /* HAVE_OPENGL */
 
-#ifdef HAVE_OPENGL_ES
+#if defined(HAVE_OPENGL_ES)
 #ifdef __SDL_NOGETPROCADDR__
     #define SDL_PROC(ret,func,params) video->GLES_##func=func;
 #else
@@ -794,9 +796,7 @@ SDL_Surface * SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags)
 #include "SDL_glesfuncs.h"
 #undef SDL_PROC	
 #endif /* HAVE_OPENGL_ES */
-
 	}
-#endif /* HAVE_OPENGL || HAVE_OPENGL_ES */
 
 	/* If we're running OpenGL, make the context current */
 	if ( (video->screen->flags & SDL_OPENGL) &&
@@ -815,22 +815,20 @@ SDL_Surface * SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags)
 	}
 
 	/* Set up a fake SDL surface for OpenGL "blitting" */
-	if ( (flags & SDL_OPENGLBLIT) == SDL_OPENGLBLIT ||
-	     (flags & SDL_OPENGLESBLIT) == SDL_OPENGLESBLIT) {
+	if ( (flags & SDL_OPENGLBLIT) == SDL_OPENGLBLIT ) {
 		/* Load GL functions for performing the texture updates */
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENG_ES)
+#if defined(HAVE_OPENGL)
 
 		/* Create a software surface for blitting */
-#if defined(GL_VERSION_1_2) || defined(HAVE_OPENGL_ES)
+#if defined(GL_VERSION_1_2)
 		/* If the implementation either supports the packed pixels
 		   extension, or implements the core OpenGL 1.2 API, it will
 		   support the GL_UNSIGNED_SHORT_5_6_5 texture format.
 		   OpenGL ES also implements that same format.
 		 */
 		if ( (bpp == 16) &&
-		     ((video->screen->flags & SDL_OPENGLES) ||
-		      strstr((const char *)video->glGetString(GL_EXTENSIONS), "GL_EXT_packed_pixels") ||
-		      (atof((const char *)video->glGetString(GL_VERSION)) >= 1.2f))
+		     (strstr((const char *)video->glGetString(GL_EXTENSIONS), "GL_EXT_packed_pixels") ||
+		     (atof((const char *)video->glGetString(GL_VERSION)) >= 1.2f))
 		   ) {
 			video->is_32bit = 0;
 			SDL_VideoSurface = SDL_CreateRGBSurface(
@@ -876,45 +874,25 @@ SDL_Surface * SDL_SetVideoMode (int width, int height, int bpp, Uint32 flags)
 
 		/* Set the surface completely opaque & white by default */
 		memset( SDL_VideoSurface->pixels, 255, SDL_VideoSurface->h * SDL_VideoSurface->pitch );
-#if defined(HAVE_OPENGL_ES)
-		if (video->screen->flags & SDL_OPENGLES)
-		{
-			video->GLES_glGenTextures( 1, &video->texture );
-			video->GLES_glBindTexture( GL_TEXTURE_2D, video->texture );
-			video->GLES_glTexImage2D(
-				GL_TEXTURE_2D,
-				0,
-				video->is_32bit ? GL_RGBA : GL_RGB,
-				256,
-				256,
-				0,
-				video->is_32bit ? GL_RGBA : GL_RGB,
-				video->is_32bit ? GL_UNSIGNED_BYTE : GL_UNSIGNED_SHORT_5_6_5,
-				NULL);
-		}
-		else
-#endif /* HAVE_OPENGL_ES */
-		{
-			video->glGenTextures( 1, &video->texture );
-			video->glBindTexture( GL_TEXTURE_2D, video->texture );
-			video->glTexImage2D(
-				GL_TEXTURE_2D,
-				0,
-				video->is_32bit ? GL_RGBA : GL_RGB,
-				256,
-				256,
-				0,
-				video->is_32bit ? GL_RGBA : GL_RGB,
+		video->glGenTextures( 1, &video->texture );
+		video->glBindTexture( GL_TEXTURE_2D, video->texture );
+		video->glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			video->is_32bit ? GL_RGBA : GL_RGB,
+			256,
+			256,
+			0,
+			video->is_32bit ? GL_RGBA : GL_RGB,
 #ifdef GL_VERSION_1_2
-				video->is_32bit ? GL_UNSIGNED_BYTE : GL_UNSIGNED_SHORT_5_6_5,
+			video->is_32bit ? GL_UNSIGNED_BYTE : GL_UNSIGNED_SHORT_5_6_5,
 #else
-				GL_UNSIGNED_BYTE,
+			GL_UNSIGNED_BYTE,
 #endif
-				NULL);
-		}
+			NULL);
 		video->UpdateRects = SDL_GL_UpdateRectsLock;
 #else
-		SDL_SetError("Somebody forgot to #define HAVE_OPENGL or HAVE_OPENGL_ES");
+		SDL_SetError("Somebody forgot to #define HAVE_OPENGL");
 		return(NULL);
 #endif
 	}
@@ -1625,7 +1603,7 @@ void SDL_GL_UpdateRectsLock(SDL_VideoDevice* this, int numrects, SDL_Rect *rects
 /* Update rects without state setting and changing (the caller is responsible for it) */
 void SDL_GL_UpdateRects(int numrects, SDL_Rect *rects)
 {
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENGL_ES)
+#if defined(HAVE_OPENGL)
 	SDL_VideoDevice *this = current_video;
 	SDL_Rect update, tmp;
 	int x, y, i;
@@ -1650,91 +1628,41 @@ void SDL_GL_UpdateRects(int numrects, SDL_Rect *rects)
 
 				if ( update.h > 256 )
 					update.h = 256;
-			
-#if defined(HAVE_OPENGL_ES)
-				if (this->screen->flags & SDL_OPENGLES)
-				{
-					int r;
-					GLshort vertices[2 * 4];
-					GLfloat texcoords[2 * 4];
-					const GLbyte indices[] = { 0, 1, 2, 3 };
 					
-					for (r = 0; r < update.h; r++)
-					{
-							/* This is really slow, but right now there's no other way */
-							this->GLES_glTexSubImage2D(
-								GL_TEXTURE_2D,
-								0,
-								0,
-								r,
-								update.w,
-								1,
-								this->is_32bit? GL_RGBA : GL_RGB,
-								GL_UNSIGNED_BYTE,
-								(Uint8 *)this->screen->pixels +
-								this->screen->format->BytesPerPixel * update.x +
-								(r + update.y) * this->screen->pitch );
-					}
-
-					vertices[0] = update.x;            vertices[1] = update.y;
-					vertices[2] = update.x + update.w; vertices[3] = update.y;
-					vertices[4] = update.x;            vertices[5] = update.y + update.h;
-					vertices[6] = update.x + update.w; vertices[7] = update.y + update.h;
-
-					texcoords[0] = 0.0;                       texcoords[1] = 0.0;
-					texcoords[2] = (float)(update.w / 256.0); texcoords[3] = 0.0;
-					texcoords[4] = 0.0;                       texcoords[5] = (float)(update.h / 256.0);
-					texcoords[6] = (float)(update.w / 256.0); texcoords[7] = (float)(update.h / 256.0);
-
-					this->GLES_glVertexPointer(2, GL_SHORT, 0, vertices);
-					this->GLES_glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
-					this->GLES_glEnableClientState(GL_VERTEX_ARRAY);
-					this->GLES_glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-					this->GLES_glDisableClientState(GL_COLOR_ARRAY);
-
-					this->GLES_glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, indices);
-
-					this->GLES_glDisable(GL_VERTEX_ARRAY);
-					this->GLES_glDisable(GL_TEXTURE_COORD_ARRAY);
-				}
-				else
-#endif /* HAVE_OPENGL_ES */
-				{
-					this->glFlush();
-					this->glTexSubImage2D( 
-						GL_TEXTURE_2D, 
-						0, 
-						0, 
-						0, 
-						update.w, 
-						update.h, 
-						this->is_32bit? GL_RGBA : GL_RGB,
+				this->glFlush();
+				this->glTexSubImage2D(
+					GL_TEXTURE_2D,
+					0,
+					0,
+					0,
+					update.w,
+					update.h,
+					this->is_32bit? GL_RGBA : GL_RGB,
 #ifdef GL_VERSION_1_2
-						this->is_32bit ? GL_UNSIGNED_BYTE : GL_UNSIGNED_SHORT_5_6_5,
+					this->is_32bit ? GL_UNSIGNED_BYTE : GL_UNSIGNED_SHORT_5_6_5,
 #else
-						GL_UNSIGNED_BYTE,
+					GL_UNSIGNED_BYTE,
 #endif
-						(Uint8 *)this->screen->pixels + 
-							this->screen->format->BytesPerPixel * update.x + 
-							update.y * this->screen->pitch );
+					(Uint8 *)this->screen->pixels +
+						this->screen->format->BytesPerPixel * update.x +
+						update.y * this->screen->pitch );
 	
-					this->glFlush();
-					/*
-					* Note the parens around the function name:
-					* This is because some OpenGL implementations define glTexCoord etc 
-					* as macros, and we don't want them expanded here.
-					*/
-					this->glBegin(GL_TRIANGLE_STRIP);
-						(this->glTexCoord2f)( 0.0, 0.0 );	
-						(this->glVertex2i)( update.x, update.y );
-						(this->glTexCoord2f)( (float)(update.w / 256.0), 0.0 );	
-						(this->glVertex2i)( update.x + update.w, update.y );
-						(this->glTexCoord2f)( 0.0, (float)(update.h / 256.0) );
-						(this->glVertex2i)( update.x, update.y + update.h );
-						(this->glTexCoord2f)( (float)(update.w / 256.0), (float)(update.h / 256.0) );	
-						(this->glVertex2i)( update.x + update.w	, update.y + update.h );
-					this->glEnd();
-				}
+				this->glFlush();
+				/*
+				* Note the parens around the function name:
+				* This is because some OpenGL implementations define glTexCoord etc
+				* as macros, and we don't want them expanded here.
+				*/
+				this->glBegin(GL_TRIANGLE_STRIP);
+					(this->glTexCoord2f)( 0.0, 0.0 );
+					(this->glVertex2i)( update.x, update.y );
+					(this->glTexCoord2f)( (float)(update.w / 256.0), 0.0 );
+					(this->glVertex2i)( update.x + update.w, update.y );
+					(this->glTexCoord2f)( 0.0, (float)(update.h / 256.0) );
+					(this->glVertex2i)( update.x, update.y + update.h );
+					(this->glTexCoord2f)( (float)(update.w / 256.0), (float)(update.h / 256.0) );
+					(this->glVertex2i)( update.x + update.w	, update.y + update.h );
+				this->glEnd();
 			
 				tmp.x += 256;
 				tmp.w -= 256;
@@ -1743,7 +1671,7 @@ void SDL_GL_UpdateRects(int numrects, SDL_Rect *rects)
 			tmp.h -= 256;
 		}
 	}
-#endif /* HAVE_OPENGL || HAVE_OPENGL_ES */
+#endif /* HAVE_OPENGL */
 }
 
 /* Lock == save current state */

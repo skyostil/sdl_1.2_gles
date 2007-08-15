@@ -216,18 +216,19 @@ struct SDL_VideoDevice {
 	void (*GLES_SwapBuffers)(_THIS);
 
   	/* OpenGL functions for SDL_OPENGLBLIT */
-#if defined(HAVE_OPENGL) || defined(HAVE_OPENGL_ES)
+#if defined(HAVE_OPENGL)
 #  ifndef WIN32
 #    define WINAPI
 #  endif
 #  define SDL_PROC(ret,func,params) ret (WINAPI *func) params;
 #  include "SDL_glfuncs.h"
 #  undef SDL_PROC
-#  ifdef HAVE_OPENGL_ES
-#    define SDL_PROC(ret,func,params) ret (WINAPI *(GLES_##func)) params;
-#    include "SDL_glesfuncs.h"
-#    undef SDL_PROC
-#  endif
+#endif /* HAVE_OPENGL */
+#ifdef HAVE_OPENGL_ES
+#  define SDL_PROC(ret,func,params) ret (WINAPI *(GLES_##func)) params;
+#  include "SDL_glesfuncs.h"
+#  undef SDL_PROC
+#endif /* HAVE_OPENGL_ES */
 	/* Texture id */
 	GLuint texture;
 #endif
