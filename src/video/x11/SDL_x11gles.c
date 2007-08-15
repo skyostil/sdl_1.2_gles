@@ -37,9 +37,9 @@ static char rcsid =
 /* TODO: Change this to libgles_cm.so or something */
 #if defined(sgi)
 /* IRIX doesn't have a GL library versioning system */
-#define DEFAULT_OPENGL	"libvincent.so"
+#define DEFAULT_OPENGL	"libGLES_CM.so"
 #else
-#define DEFAULT_OPENGL	"libvincent.so.0"
+#define DEFAULT_OPENGL	"libGLES_CM.so.0"
 #endif
 
 /* return the preferred visual to use for openGL graphics */
