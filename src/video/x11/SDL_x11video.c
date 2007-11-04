@@ -135,9 +135,9 @@ static SDL_VideoDevice *X11_CreateDevice(int devindex)
 #endif
 	}
 	if ( (device == NULL) || (device->hidden == NULL) ||
-	                         (device->gl_data == NULL) ||
+	                         (device->gl_data == NULL)
 #ifdef HAVE_OPENGL_ES
-	                         (device->gles_data == NULL) ) {
+	                         || (device->gles_data == NULL) ) {
 #else
 	                         ) {
 #endif

@@ -34,12 +34,11 @@ static char rcsid =
 #include "SDL_x11dga_c.h"
 #include "SDL_x11gles_c.h"
 
-/* TODO: Change this to libgles_cm.so or something */
 #if defined(sgi)
 /* IRIX doesn't have a GL library versioning system */
 #define DEFAULT_OPENGL	"libGLES_CM.so"
 #else
-#define DEFAULT_OPENGL	"libGLES_CM.so.0"
+#define DEFAULT_OPENGL	"libGLES_CM.so.1"
 #endif
 
 /* return the preferred visual to use for openGL graphics */
